@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品展示网站</title>
+    <style>
+        /* 这里放置CSS代码 *//* CSS 部分 */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: #f5f5f5;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.search-box {
+    margin: 20px 0;
+    text-align: center;
+}
+
+#searchInput {
+    width: 80%;
+    max-width: 400px;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 25px;
+}
+
+.goods-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.goods-card {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.goods-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 5px;
+    background: #eee;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.page-numbers button {
+    margin: 0 5px;
+    padding: 5px 10px;
+}
+
+.loading {
+    display: none;
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #3498db;
+    border-radius: 50%;
+    margin: 20px auto;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+    .goods-container {
+        grid-template-columns: 1fr;
+    }
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>商品展示</h1>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="输入商品名称搜索...">
+            </div>
+        </header>
+
+        <div class="loading"></div>
+        
+        <div id="goodsContainer" class="goods-container"></div>
+
+        <div class="pagination">
+            <button id="prevPage">上一页</button>
+            <div id="pageNumbers" class="page-numbers"></div>
+            <button id="nextPage">下一页</button>
+        </div>
+    </div>
+
+    <script>
+        // 这里放置JavaScript代码// JavaScript 部分
+document.addEventListener('DOMContentLoaded', () => {
+    // 示例商品数据
+    const goodsData = [
+        {
+            id: 1,
+            name: '石榴汁',
+            price: 240.00,
+            spec: '248ml/瓶 12瓶/箱',
+            origin: '山东济南',
+            images: ['images/shiliuzhi.jpg'],
+            category: '果汁'
+        },
+        {
+            id: 2,
+            name: '橙汁',
+            price: 240.00,
+            spec: '248ml/瓶 12瓶/箱',
+            origin: '山东济南',
+            images: ['images/chengzhi.jpg'],
+            category: '果汁'
+        },
+        {
+            id: 3,
+            name: '黄桃汁',
+            price: 240.00,
+            spec: '248ml/瓶 12瓶/箱',
+            origin: '山东济南',
+            images: ['images/huangtaozhi.jpg'],
+            category: '果汁'
+        },
+        {
+            id: 4,
+            name: '猕猴桃羽衣甘蓝复合果汁',
+            price: 300.00,
+            spec: '300ml/瓶 12瓶/箱',
+            origin: '山东济南',
+            images: ['images/mihutaozhi.jpg'],
+            category: '果汁'
+        },
+        {
+            id: 5,
+            name: '西梅汁',
+            price: 300.00,
+            spec: '300ml/瓶 12瓶/箱',
+            origin: '山东济南',
+            images: ['images/ximeizhi.jpg'],
+            category: '果汁'
+        },
+        // 更多示例商品...
+    ];
+
+    let currentPage = 1;
+    const itemsPerPage = 12;
+    let filteredGoods = [...goodsData];
+    
+    // 初始化
+    showLoading();
+    setTimeout(() => {
+        renderGoods();
+        setupPagination();
+        hideLoading();
+    }, 500);
+
+    // 搜索功能
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        filteredGoods = goodsData.filter(item => 
+            item.name.toLowerCase().includes(searchTerm)
+        );
+        currentPage = 1;
+        renderGoods();
+        setupPagination();
+    });
+
+    // 分页功能
+    function setupPagination() {
+        const totalPages = Math.ceil(filteredGoods.length / itemsPerPage);
+        const pageNumbers = document.getElementById('pageNumbers');
+        
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, currentPage + 2);
+        
+        pageNumbers.innerHTML = '';
+        for (let i = startPage; i <= endPage; i++) {
+            const button = document.createElement('button');
+            button.textContent = i;
+            button.className = i === currentPage ? 'active' : '';
+            button.addEventListener('click', () => {
+                currentPage = i;
+                renderGoods();
+                setupPagination();
+            });
+            pageNumbers.appendChild(button);
+        }
+
+        document.getElementById('prevPage').disabled = currentPage === 1;
+        document.getElementById('nextPage').disabled = currentPage === totalPages;
+    }
+
+    // 渲染商品
+    function renderGoods() {
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        const currentGoods = filteredGoods.slice(start, end);
+
+        const container = document.getElementById('goodsContainer');
+        container.innerHTML = currentGoods.map(good => `
+            <div class="goods-card">
+                <div class="image-slider">
+                    ${good.images.map(img => `
+                        <img 
+                            class="goods-image" 
+                            data-src="${img}" 
+                            alt="${good.name}"
+                            loading="lazy"
+                        >
+                    `).join('')}
+                </div>
+                <h3>${good.name}</h3>
+                <p>价格: ¥${good.price.toFixed(2)}</p>
+                <p>规格: ${good.spec}</p>
+                <p>产地: ${good.origin}</p>
+            </div>
+        `).join('');
+
+        // 初始化懒加载
+        initLazyLoad();
+    }
+
+    // 图片懒加载
+    function initLazyLoad() {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.getAttribute('data-src');
+                    observer.unobserve(img);
+                }
+            });
+        });
+
+        document.querySelectorAll('img[data-src]').forEach(img => {
+            observer.observe(img);
+        });
+    }
+
+    // 加载动画控制
+    function showLoading() {
+        document.querySelector('.loading').style.display = 'block';
+    }
+    
+    function hideLoading() {
+        document.querySelector('.loading').style.display = 'none';
+    }
+
+    // 分页按钮事件
+    document.getElementById('prevPage').addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderGoods();
+            setupPagination();
+        }
+    });
+
+    document.getElementById('nextPage').addEventListener('click', () => {
+        if (currentPage * itemsPerPage < filteredGoods.length) {
+            currentPage++;
+            renderGoods();
+            setupPagination();
+        }
+    });
+});
+    </script>
+</body>
+</html>
